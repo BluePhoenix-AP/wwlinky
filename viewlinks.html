@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>World Wide Linky</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #4f46e5;
+        --primary-hover: #4338ca;
+        --secondary-color: #f3f4f6;
+        --text-color: #1f2937;
+        --text-light: #6b7280;
+        --border-color: #e5e7eb;
+        --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+          0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --like-color: #10b981;
+        --dislike-color: #ef4444;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f9fafb;
+        color: var(--text-color);
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header {
+        background-color: white;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .header-content {
+        padding: 1.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .refresh-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background-color 0.2s;
+      }
+
+      .refresh-btn:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .refresh-btn:active {
+        transform: translateY(1px);
+      }
+
+      .main-content {
+        padding: 2rem 0;
+      }
+
+      .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+      }
+
+      .links-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .link-card {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .link-card:hover {
+        box-shadow: var(--card-hover-shadow);
+        transform: translateY(-2px);
+      }
+
+      .link-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+      }
+
+      .link-url {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        word-break: break-all;
+        display: block;
+        cursor: pointer;
+      }
+
+      .link-url:hover {
+        text-decoration: underline;
+      }
+
+      .link-description {
+        color: var(--text-light);
+        flex-grow: 1;
+        margin-bottom: 1rem;
+      }
+
+      .link-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+      }
+
+      .vote-buttons {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .vote-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s;
+        font-weight: 500;
+      }
+
+      .like-btn {
+        color: var(--like-color);
+      }
+
+      .like-btn:hover {
+        background-color: rgba(16, 185, 129, 0.1);
+      }
+
+      .like-btn.active {
+        background-color: rgba(16, 185, 129, 0.2);
+      }
+
+      .dislike-btn {
+        color: var(--dislike-color);
+      }
+
+      .dislike-btn:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+      }
+
+      .dislike-btn.active {
+        background-color: rgba(239, 68, 68, 0.2);
+      }
+
+      .vote-count {
+        font-weight: 600;
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+      }
+
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid var(--primary-color);
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-message {
+        background-color: #fef2f2;
+        color: #b91c1c;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: var(--card-shadow);
+      }
+
+      .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+
+      .empty-state-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .empty-state-text {
+        color: var(--text-light);
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #10b981;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        box-shadow: var(--card-hover-shadow);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .toast.error {
+        background-color: #ef4444;
+      }
+
+      @media (max-width: 768px) {
+        .links-container {
+          grid-template-columns: 1fr;
+        }
+      }
+      #home {
+        color: blue;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <div class="header-content">
+          <div class="logo">WWLinky</div>
+          <button id="refreshBtn" class="refresh-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"
+              />
+              <path
+                d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"
+              />
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="container">
+        <h1 class="page-title">Links Posted</h1>
+        <div id="errorContainer"></div>
+        <div id="linksContainer" class="links-container">
+          <div class="loading">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="toast" class="toast">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        viewBox="0 0 16 16"
+      >
+        <path
+          d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"
+        />
+      </svg>
+      <span id="toastMessage">Links refreshed successfully!</span>
+    </div>
+    <footer>
+      <a
+        href="https://wwlinky.my.canva.site"
+        style="padding: 10px 15px"
+        id="home"
+        >-->Go To Home<--</a
+      >
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const linksContainer = document.getElementById("linksContainer");
+        const errorContainer = document.getElementById("errorContainer");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const toast = document.getElementById("toast");
+        const toastMessage = document.getElementById("toastMessage");
+
+        // Update this URL to match your FastAPI backend
+        const API_URL = "http://localhost:8000/api/links";
+        const VOTE_API_URL = "http://localhost:8000/api/vote";
+
+        // Store user votes to track current state
+        let userVotes = {};
+
+        // Function to fetch links from the API
+        async function fetchLinks() {
+          try {
+            // Show loading state
+            linksContainer.innerHTML =
+              '<div class="loading"><div class="spinner"></div></div>';
+            errorContainer.innerHTML = "";
+
+            const response = await fetch(API_URL);
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const links = await response.json();
+            renderLinks(links);
+            showToast("Links refreshed successfully!");
+          } catch (error) {
+            console.error("Error fetching links:", error);
+            showError(
+              "Failed to load links. Please check your connection and try again."
+            );
+
+            // Show empty state on error
+            linksContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📎</div>
+                            <div class="empty-state-title">No links available</div>
+                            <div class="empty-state-text">Unable to load links. Please try again later.</div>
+                        </div>
+                    `;
+          }
+        }
+
+        // Function to render links to the DOM
+        function renderLinks(links) {
+          if (links.length === 0) {
+            linksContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📎</div>
+                            <div class="empty-state-title">No links posted yet</div>
+                            <div class="empty-state-text">Be the first to share an interesting link!</div>
+                        </div>
+                    `;
+            return;
+          }
+
+          // Sort links by likes (descending)
+          const sortedLinks = [...links].sort((a, b) => {
+            const scoreA = (a.likes || 0) - (a.dislikes || 0);
+            const scoreB = (b.likes || 0) - (b.dislikes || 0);
+            return scoreB - scoreA;
+          });
+
+          linksContainer.innerHTML = sortedLinks
+            .map(
+              (link) => `
+                    <div class="link-card">
+                        <h3 class="link-title">${escapeHtml(
+                          link.title || "Untitled"
+                        )}</h3>
+                        <div class="link-url" data-url="${escapeHtml(
+                          link.url
+                        )}">${escapeHtml(link.url)}</div>
+                        <p class="link-description">${escapeHtml(
+                          link.description || "No description available."
+                        )}</p>
+                        <div class="link-actions">
+                            <div class="vote-buttons">
+                                <button class="vote-btn like-btn ${
+                                  userVotes[link.id] === "like" ? "active" : ""
+                                }" data-id="${link.id}" data-vote="like">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                                    </svg>
+                                    <span class="vote-count">${
+                                      link.likes || 0
+                                    }</span>
+                                </button>
+                                <button class="vote-btn dislike-btn ${
+                                  userVotes[link.id] === "dislike"
+                                    ? "active"
+                                    : ""
+                                }" data-id="${link.id}" data-vote="dislike">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" transform="rotate(180 8 8)"/>
+                                    </svg>
+                                    <span class="vote-count">${
+                                      link.dislikes || 0
+                                    }</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            )
+            .join("");
+
+          // Add event listeners to vote buttons
+          document.querySelectorAll(".vote-btn").forEach((button) => {
+            button.addEventListener("click", handleVote);
+          });
+
+          // Add event listeners to link URLs
+          document.querySelectorAll(".link-url").forEach((linkElement) => {
+            linkElement.addEventListener("click", handleLinkClick);
+          });
+        }
+
+        // Function to handle link clicks
+        function handleLinkClick(event) {
+          let url = event.currentTarget.getAttribute("data-url");
+
+          // Check if the URL already has a protocol
+          if (!url.match(/^[a-zA-Z]+:\/\//)) {
+            // If not, add https:// as the default protocol
+            url = "https://" + url;
+          }
+
+          // Open the URL in a new tab
+          window.open(url, "_blank", "noopener,noreferrer");
+        }
+
+        // Function to handle voting
+        async function handleVote(event) {
+          const button = event.currentTarget;
+          const linkId = button.getAttribute("data-id");
+          const voteType = button.getAttribute("data-vote");
+
+          // If user already voted the same way, remove the vote
+          if (userVotes[linkId] === voteType) {
+            await removeVote(linkId);
+            userVotes[linkId] = null;
+          } else {
+            // Otherwise, add/update the vote
+            await addVote(linkId, voteType);
+            userVotes[linkId] = voteType;
+          }
+
+          // Refresh links to update counts and sorting
+          fetchLinks();
+        }
+
+        // Function to add a vote
+        async function addVote(linkId, voteType) {
+          try {
+            const response = await fetch(VOTE_API_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                link_id: linkId,
+                vote_type: voteType,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            showToast(`Vote ${voteType}d successfully!`);
+          } catch (error) {
+            console.error("Error voting:", error);
+            showToast(`Failed to ${voteType}. Please try again.`, true);
+          }
+        }
+
+        // Function to remove a vote
+        async function removeVote(linkId) {
+          try {
+            const response = await fetch(`${VOTE_API_URL}/${linkId}`, {
+              method: "DELETE",
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            showToast("Vote removed successfully!");
+          } catch (error) {
+            console.error("Error removing vote:", error);
+            showToast("Failed to remove vote. Please try again.", true);
+          }
+        }
+
+        // Function to show error message
+        function showError(message) {
+          errorContainer.innerHTML = `
+                    <div class="error-message">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                        </svg>
+                        ${message}
+                    </div>
+                `;
+        }
+
+        // Function to show toast notification
+        function showToast(message, isError = false) {
+          toastMessage.textContent = message;
+
+          if (isError) {
+            toast.classList.add("error");
+          } else {
+            toast.classList.remove("error");
+          }
+
+          toast.classList.add("show");
+
+          setTimeout(() => {
+            toast.classList.remove("show");
+          }, 3000);
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        // Event listener for refresh button
+        refreshBtn.addEventListener("click", fetchLinks);
+
+        // Initial fetch
+        fetchLinks();
+      });
+    </script>
+  </body>
+</html>

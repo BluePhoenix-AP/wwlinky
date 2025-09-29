@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>World Wide Linky</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f5faff;
+        color: #333;
+      }
+      .container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        margin-top: 0;
+        font-size: 28px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      .result-container {
+        margin-top: 30px;
+        padding: 15px;
+        border-radius: 4px;
+        display: none;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .loading {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .result-item {
+        margin-bottom: 10px;
+      }
+      .result-label {
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      #home {
+        color: blue;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Post Link In WWLinky</h1>
+
+      <div class="form-group">
+        <label for="linkInput">Enter Link:</label>
+        <input type="text" id="linkInput" placeholder="https://example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="titleInput">Enter Title:</label>
+        <input type="text" id="titleInput" placeholder="Example Title" />
+      </div>
+
+      <div class="form-group">
+        <label for="descriptionInput">Enter Description:</label>
+        <textarea
+          id="descriptionInput"
+          placeholder="Enter a description for the link..."
+        ></textarea>
+      </div>
+
+      <button id="submitBtn">Post Link</button>
+      <a
+        href="https://wwlinky.my.canva.site"
+        style="padding: 10px 15px"
+        id="home"
+        >-->Go To Home<--</a
+      >
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Sending request to FastAPI...</p>
+      </div>
+
+      <div class="result-container" id="resultContainer">
+        <h3>FastAPI Response:</h3>
+        <div id="resultContent"></div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const submitBtn = document.getElementById("submitBtn");
+        const linkInput = document.getElementById("linkInput");
+        const titleInput = document.getElementById("titleInput");
+        const descriptionInput = document.getElementById("descriptionInput");
+        const resultContainer = document.getElementById("resultContainer");
+        const resultContent = document.getElementById("resultContent");
+        const loading = document.getElementById("loading");
+
+        // Configure your FastAPI endpoint here
+        const API_ENDPOINT = "http://localhost:8000/api/process-link";
+
+        submitBtn.addEventListener("click", async function () {
+          const linkValue = linkInput.value.trim();
+          const titleValue = titleInput.value.trim();
+          const descriptionValue = descriptionInput.value.trim();
+
+          if (!linkValue) {
+            showResult("Please enter a valid link.", "error");
+            return;
+          }
+
+          // Show loading indicator
+          loading.style.display = "block";
+          resultContainer.style.display = "none";
+
+          try {
+            const response = await fetch(API_ENDPOINT, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify({
+                url: linkValue, // FastAPI often uses 'url' instead of 'link'
+                title: titleValue,
+                description: descriptionValue,
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(
+                errorData.detail || `HTTP error! Status: ${response.status}`
+              );
+            }
+
+            const data = await response.json();
+            displayResult(data);
+          } catch (error) {
+            showResult(`Error: ${error.message}`, "error");
+          } finally {
+            loading.style.display = "none";
+          }
+        });
+
+        function displayResult(data) {
+          // Clear previous results
+          resultContent.innerHTML = "";
+
+          // Create result items for each property in the response
+          for (const [key, value] of Object.entries(data)) {
+            const resultItem = document.createElement("div");
+            resultItem.className = "result-item";
+
+            const label = document.createElement("span");
+            label.className = "result-label";
+            label.textContent = `${
+              key.charAt(0).toUpperCase() + key.slice(1)
+            }:`;
+
+            const valueSpan = document.createElement("span");
+            valueSpan.textContent = value;
+
+            resultItem.appendChild(label);
+            resultItem.appendChild(valueSpan);
+            resultContent.appendChild(resultItem);
+          }
+
+          // Show the result container with success styling
+          resultContainer.className = "result-container success";
+          resultContainer.style.display = "block";
+        }
+
+        function showResult(message, type) {
+          resultContent.innerHTML = `<p>${message}</p>`;
+          resultContainer.className = "result-container " + type;
+          resultContainer.style.display = "block";
+        }
+      });
+    </script>
+  </body>
+</html>
